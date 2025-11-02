@@ -1,13 +1,9 @@
 "use client";
 
-import React, { useMemo, useCallback } from "react";
+import React, { useCallback } from "react";
 import { FileText, Copy, Download } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { MarkdownContent } from "../MarkdownContent/MarkdownContent";
 import type { FileItem } from "../../types/types";
 import styles from "./FileViewDialog.module.scss";
 
@@ -18,53 +14,6 @@ interface FileViewDialogProps {
 
 export const FileViewDialog = React.memo<FileViewDialogProps>(
   ({ file, onClose }) => {
-    const fileExtension = useMemo(() => {
-      return file.path.split(".").pop()?.toLowerCase() || "";
-    }, [file.path]);
-
-    const isMarkdown = useMemo(() => {
-      return fileExtension === "md" || fileExtension === "markdown";
-    }, [fileExtension]);
-
-    const language = useMemo(() => {
-      const languageMap: Record<string, string> = {
-        js: "javascript",
-        jsx: "javascript",
-        ts: "typescript",
-        tsx: "typescript",
-        py: "python",
-        rb: "ruby",
-        go: "go",
-        rs: "rust",
-        java: "java",
-        cpp: "cpp",
-        c: "c",
-        cs: "csharp",
-        php: "php",
-        swift: "swift",
-        kt: "kotlin",
-        scala: "scala",
-        sh: "bash",
-        bash: "bash",
-        zsh: "bash",
-        json: "json",
-        xml: "xml",
-        html: "html",
-        css: "css",
-        scss: "scss",
-        sass: "sass",
-        less: "less",
-        sql: "sql",
-        yaml: "yaml",
-        yml: "yaml",
-        toml: "toml",
-        ini: "ini",
-        dockerfile: "dockerfile",
-        makefile: "makefile",
-      };
-      return languageMap[fileExtension] || "text";
-    }, [fileExtension]);
-
     const handleCopy = useCallback(() => {
       if (file.content) {
         navigator.clipboard.writeText(file.content);
@@ -116,36 +65,19 @@ export const FileViewDialog = React.memo<FileViewDialogProps>(
             </div>
           </div>
 
-          <ScrollArea className={styles.contentArea}>
+          <div className={styles.contentArea}>
             {file.content ? (
-              isMarkdown ? (
-                <div className={styles.markdownWrapper}>
-                  <MarkdownContent content={file.content} />
-                </div>
-              ) : (
-                <SyntaxHighlighter
-                  language={language}
-                  style={oneDark}
-                  customStyle={{
-                    margin: 0,
-                    borderRadius: "0.5rem",
-                    fontSize: "0.875rem",
-                  }}
-                  showLineNumbers
-                >
-                  {file.content}
-                </SyntaxHighlighter>
-              )
+              <pre className={styles.codeContent}>{file.content}</pre>
             ) : (
               <div className={styles.emptyContent}>
                 <p>File is empty</p>
               </div>
             )}
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
     );
-  },
+  }
 );
 
 FileViewDialog.displayName = "FileViewDialog";

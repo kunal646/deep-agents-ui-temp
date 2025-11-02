@@ -65,9 +65,8 @@
   flex: 1;
   max-height: 60vh;
   overflow: auto;
-  background-color: var(--color-surface);
+  background-color: #282c34;
   border-radius: $radius-md;
-  padding: $spacing-md;
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -75,16 +74,16 @@
   }
 
   &::-webkit-scrollbar-track {
-    background: var(--color-border-light);
+    background: #1e2127;
     border-radius: $radius-sm;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: var(--color-text-tertiary);
+    background: #4b5263;
     border-radius: $radius-sm;
 
     &:hover {
-      background: var(--color-text-secondary);
+      background: #5c6370;
     }
   }
 }
@@ -106,4 +105,19 @@
   padding: $spacing-lg;
   background-color: var(--color-background);
   border-radius: $radius-md;
+}
+
+.codeContent {
+  margin: 0;
+  padding: $spacing-lg;
+  background-color: transparent;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #abb2bf;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  box-sizing: border-box;
 }

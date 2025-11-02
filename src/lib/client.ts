@@ -3,11 +3,13 @@ import { getDeployment } from "./environment/deployments";
 
 export function createClient(accessToken: string) {
   const deployment = getDeployment();
-  return new Client({
+
+  const client = new Client({
     apiUrl: deployment?.deploymentUrl || "",
     apiKey: accessToken,
     defaultHeaders: {
       "x-auth-scheme": "langsmith",
     },
   });
+  return client;
 }

@@ -15,11 +15,11 @@ export default function HomePage() {
   const { session } = useAuthContext();
   const [threadId, setThreadId] = useQueryState("threadId");
   const [selectedSubAgent, setSelectedSubAgent] = useState<SubAgent | null>(
-    null,
+    null
   );
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
   const [todos, setTodos] = useState<TodoItem[]>([]);
-  const [files, setFiles] = useState<Record<string, string>>({});
+  const [files, setFiles] = useState<Record<string, any>>({});
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isLoadingThreadState, setIsLoadingThreadState] = useState(false);
 
@@ -44,7 +44,7 @@ export default function HomePage() {
         if (state.values) {
           const currentState = state.values as {
             todos?: TodoItem[];
-            files?: Record<string, string>;
+            files?: Record<string, any>;
           };
           setTodos(currentState.todos || []);
           setFiles(currentState.files || {});

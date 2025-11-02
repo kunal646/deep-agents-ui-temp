@@ -20,6 +20,12 @@ export interface FileItem {
   content: string;
 }
 
+export interface FileMetadata {
+  content: string;
+  created_at?: string;
+  modified_at?: string;
+}
+
 export interface TodoItem {
   id: string;
   content: string;
@@ -33,4 +39,25 @@ export interface Thread {
   title: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export type MessageContentText = {
+  type: "text";
+  text: string;
+};
+
+export type MessageContentImageUrl = {
+  type: "image_url";
+  image_url: {
+    url: string;
+    detail?: "auto" | "low" | "high";
+  };
+};
+
+export type MessageContent = MessageContentText | MessageContentImageUrl;
+
+export interface UploadedImage {
+  file: File;
+  previewUrl: string;
+  uploadedUrl?: string;
 }

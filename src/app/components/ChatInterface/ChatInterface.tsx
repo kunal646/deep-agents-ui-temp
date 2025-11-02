@@ -10,24 +10,41 @@ import React, {
 } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Bot, LoaderCircle, SquarePen, History, X } from "lucide-react";
+import {
+  Send,
+  Bot,
+  LoaderCircle,
+  SquarePen,
+  History,
+  X,
+  Image as ImageIcon,
+  Paperclip,
+} from "lucide-react";
 import { ChatMessage } from "../ChatMessage/ChatMessage";
 import { ThreadHistorySidebar } from "../ThreadHistorySidebar/ThreadHistorySidebar";
-import type { SubAgent, TodoItem, ToolCall } from "../../types/types";
+import type {
+  SubAgent,
+  TodoItem,
+  ToolCall,
+  UploadedImage,
+} from "../../types/types";
 import { useChat } from "../../hooks/useChat";
 import styles from "./ChatInterface.module.scss";
 import { Message } from "@langchain/langgraph-sdk";
-import { extractStringFromMessageContent } from "../../utils/utils";
+import {
+  extractStringFromMessageContent,
+  uploadImageToSupabase,
+} from "../../utils/utils";
 
 interface ChatInterfaceProps {
   threadId: string | null;
   selectedSubAgent: SubAgent | null;
   setThreadId: (
-    value: string | ((old: string | null) => string | null) | null,
+    value: string | ((old: string | null) => string | null) | null
   ) => void;
   onSelectSubAgent: (subAgent: SubAgent) => void;
   onTodosUpdate: (todos: TodoItem[]) => void;
-  onFilesUpdate: (files: Record<string, string>) => void;
+  onFilesUpdate: (files: Record<string, any>) => void;
   onNewThread: () => void;
   isLoadingThreadState: boolean;
 }
@@ -45,28 +62,121 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(
   }) => {
     const [input, setInput] = useState("");
     const [isThreadHistoryOpen, setIsThreadHistoryOpen] = useState(false);
+    const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
+    const [isUploadingImages, setIsUploadingImages] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { messages, isLoading, sendMessage, stopStream } = useChat(
       threadId,
       setThreadId,
       onTodosUpdate,
-      onFilesUpdate,
+      onFilesUpdate
     );
 
     useEffect(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
+    const handleFileSelect = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        console.log("[ChatInterface] Files selected:", {
+          count: files.length,
+          fileNames: Array.from(files).map((f) => f.name),
+        });
+
+        const newImages: UploadedImage[] = Array.from(files).map((file) => ({
+          file,
+          previewUrl: URL.createObjectURL(file),
+        }));
+
+        setUploadedImages((prev) => [...prev, ...newImages]);
+
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      },
+      []
+    );
+
+    const handleRemoveImage = useCallback((index: number) => {
+      setUploadedImages((prev) => {
+        const newImages = [...prev];
+        // Revoke object URL to free memory
+        URL.revokeObjectURL(newImages[index].previewUrl);
+        newImages.splice(index, 1);
+        return newImages;
+      });
+    }, []);
+
     const handleSubmit = useCallback(
-      (e: FormEvent) => {
+      async (e: FormEvent) => {
         e.preventDefault();
         const messageText = input.trim();
-        if (!messageText || isLoading) return;
-        sendMessage(messageText);
-        setInput("");
+
+        console.log("[ChatInterface] Form submitted:", {
+          timestamp: new Date().toISOString(),
+          messageText,
+          messageLength: messageText.length,
+          imageCount: uploadedImages.length,
+          isLoading,
+          threadId,
+        });
+
+        // Check if we have either text or images
+        if ((!messageText && uploadedImages.length === 0) || isLoading) {
+          console.log("[ChatInterface] Submit blocked:", {
+            timestamp: new Date().toISOString(),
+            reason:
+              !messageText && uploadedImages.length === 0
+                ? "no message or images"
+                : "currently loading",
+          });
+          return;
+        }
+
+        try {
+          // Upload images to Supabase if any
+          let imageUrls: string[] = [];
+          if (uploadedImages.length > 0) {
+            setIsUploadingImages(true);
+            console.log("[ChatInterface] Uploading images to Supabase:", {
+              count: uploadedImages.length,
+            });
+
+            imageUrls = await Promise.all(
+              uploadedImages.map((img) => uploadImageToSupabase(img.file))
+            );
+
+            console.log("[ChatInterface] Images uploaded successfully:", {
+              urls: imageUrls,
+            });
+          }
+
+          // console.log("[ChatInterface] Calling sendMessage:", {
+          //   timestamp: new Date().toISOString(),
+          //   messageText,
+          //   imageUrls,
+          // });
+
+          sendMessage(
+            messageText,
+            imageUrls.length > 0 ? imageUrls : undefined
+          );
+          setInput("");
+          setUploadedImages([]);
+        } catch (error) {
+          console.error("[ChatInterface] Error uploading images:", error);
+          // TODO: Show error to user
+        } finally {
+          setIsUploadingImages(false);
+        }
       },
-      [input, isLoading, sendMessage],
+      [input, isLoading, sendMessage, threadId, uploadedImages]
     );
 
     const handleNewThread = useCallback(() => {
@@ -83,7 +193,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(
         setThreadId(id);
         setIsThreadHistoryOpen(false);
       },
-      [setThreadId],
+      [setThreadId]
     );
 
     const toggleThreadHistory = useCallback(() => {
@@ -98,8 +208,16 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(
     2. For each AI message, add the AI message, and any tool calls to the messageMap
     3. For each tool message, find the corresponding tool call in the messageMap and update the status and output
     */
+      // Filter out unsupported message types (only human, ai, system, developer, tool are supported)
+      const supportedTypes = ["human", "ai", "system", "developer", "tool"];
+
+      const validMessages = messages.filter(
+        (message: Message) =>
+          message.type && supportedTypes.includes(message.type)
+      );
+
       const messageMap = new Map<string, any>();
-      messages.forEach((message: Message) => {
+      validMessages.forEach((message: Message) => {
         if (message.type === "ai") {
           const toolCallsInMessage: any[] = [];
           if (
@@ -110,12 +228,12 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(
           } else if (message.tool_calls && Array.isArray(message.tool_calls)) {
             toolCallsInMessage.push(
               ...message.tool_calls.filter(
-                (toolCall: any) => toolCall.name !== "",
-              ),
+                (toolCall: any) => toolCall.name !== ""
+              )
             );
           } else if (Array.isArray(message.content)) {
             const toolUseBlocks = message.content.filter(
-              (block: any) => block.type === "tool_use",
+              (block: any) => block.type === "tool_use"
             );
             toolCallsInMessage.push(...toolUseBlocks);
           }
@@ -137,7 +255,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(
                 args,
                 status: "pending" as const,
               } as ToolCall;
-            },
+            }
           );
           messageMap.set(message.id!, {
             message,
@@ -150,7 +268,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(
           }
           for (const [, data] of messageMap.entries()) {
             const toolCallIndex = data.toolCalls.findIndex(
-              (tc: any) => tc.id === toolCallId,
+              (tc: any) => tc.id === toolCallId
             );
             if (toolCallIndex === -1) {
               continue;
@@ -243,34 +361,85 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(
           </div>
         </div>
         <form onSubmit={handleSubmit} className={styles.inputForm}>
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your message..."
-            disabled={isLoading}
-            className={styles.input}
-          />
-          {isLoading ? (
-            <Button
-              type="button"
-              onClick={stopStream}
-              className={styles.stopButton}
-            >
-              Stop
-            </Button>
-          ) : (
-            <Button
-              type="submit"
-              disabled={!input.trim()}
-              className={styles.sendButton}
-            >
-              <Send size={16} />
-            </Button>
-          )}
+          <div className={styles.inputContainer}>
+            {uploadedImages.length > 0 && (
+              <div className={styles.imagePreviewContainer}>
+                {uploadedImages.map((img, index) => (
+                  <div key={index} className={styles.imagePreview}>
+                    <img
+                      src={img.previewUrl}
+                      alt={`Upload ${index + 1}`}
+                      className={styles.previewImage}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(index)}
+                      className={styles.removeImageButton}
+                      disabled={isLoading || isUploadingImages}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className={styles.inputRow}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileSelect}
+                style={{ display: "none" }}
+                disabled={isLoading || isUploadingImages}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading || isUploadingImages}
+                className={styles.attachButton}
+              >
+                <Paperclip size={20} />
+              </Button>
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Type your message..."
+                disabled={isLoading || isUploadingImages}
+                className={styles.input}
+              />
+              {isLoading ? (
+                <Button
+                  type="button"
+                  onClick={stopStream}
+                  className={styles.stopButton}
+                >
+                  Stop
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  disabled={
+                    (!input.trim() && uploadedImages.length === 0) ||
+                    isUploadingImages
+                  }
+                  className={styles.sendButton}
+                >
+                  {isUploadingImages ? (
+                    <LoaderCircle size={16} className={styles.spinner} />
+                  ) : (
+                    <Send size={16} />
+                  )}
+                </Button>
+              )}
+            </div>
+          </div>
         </form>
       </div>
     );
-  },
+  }
 );
 
 ChatInterface.displayName = "ChatInterface";

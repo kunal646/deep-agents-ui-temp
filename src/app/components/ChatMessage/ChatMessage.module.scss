@@ -88,6 +88,23 @@
   margin: 0;
 }
 
+.images {
+  margin-top: $spacing-sm;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.uploadedImage {
+  max-width: 100%;
+  max-height: 400px;
+  border-radius: $radius-md;
+  object-fit: contain;
+  border: 1px solid var(--color-border);
+}
+
 .toolCalls {
   margin-top: $spacing-md;
   display: flex;

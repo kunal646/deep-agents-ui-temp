@@ -77,7 +77,7 @@ export const MarkdownContent = React.memo<MarkdownContentProps>(
         </ReactMarkdown>
       </div>
     );
-  },
+  }
 );
 
 MarkdownContent.displayName = "MarkdownContent";

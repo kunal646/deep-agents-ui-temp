@@ -19,7 +19,7 @@ import styles from "./TasksFilesSidebar.module.scss";
 
 interface TasksFilesSidebarProps {
   todos: TodoItem[];
-  files: Record<string, string>;
+  files: Record<string, any>;
   onFileClick: (file: FileItem) => void;
   collapsed: boolean;
   onToggleCollapse: () => void;
@@ -96,7 +96,10 @@ export const TasksFilesSidebar = React.memo<TasksFilesSidebarProps>(
                     <div className={styles.todoGroup}>
                       <h3 className={styles.groupTitle}>In Progress</h3>
                       {groupedTodos.in_progress.map((todo, index) => (
-                        <div key={`in_progress_${todo.id}_${index}`} className={styles.todoItem}>
+                        <div
+                          key={`in_progress_${todo.id}_${index}`}
+                          className={styles.todoItem}
+                        >
                           {getStatusIcon(todo.status)}
                           <span className={styles.todoContent}>
                             {todo.content}
@@ -110,7 +113,10 @@ export const TasksFilesSidebar = React.memo<TasksFilesSidebarProps>(
                     <div className={styles.todoGroup}>
                       <h3 className={styles.groupTitle}>Pending</h3>
                       {groupedTodos.pending.map((todo, index) => (
-                        <div key={`pending_${todo.id}_${index}`} className={styles.todoItem}>
+                        <div
+                          key={`pending_${todo.id}_${index}`}
+                          className={styles.todoItem}
+                        >
                           {getStatusIcon(todo.status)}
                           <span className={styles.todoContent}>
                             {todo.content}
@@ -124,7 +130,10 @@ export const TasksFilesSidebar = React.memo<TasksFilesSidebarProps>(
                     <div className={styles.todoGroup}>
                       <h3 className={styles.groupTitle}>Completed</h3>
                       {groupedTodos.completed.map((todo, index) => (
-                        <div key={`completed_${todo.id}_${index}`} className={styles.todoItem}>
+                        <div
+                          key={`completed_${todo.id}_${index}`}
+                          className={styles.todoItem}
+                        >
                           {getStatusIcon(todo.status)}
                           <span className={styles.todoContent}>
                             {todo.content}
@@ -151,7 +160,13 @@ export const TasksFilesSidebar = React.memo<TasksFilesSidebarProps>(
                       <div
                         className={styles.fileRow}
                         onClick={() =>
-                          onFileClick({ path: file, content: files[file] })
+                          onFileClick({
+                            path: file,
+                            content:
+                              typeof files[file] === "string"
+                                ? files[file]
+                                : files[file].content || "",
+                          })
                         }
                       >
                         <FileText size={16} />
@@ -166,7 +181,7 @@ export const TasksFilesSidebar = React.memo<TasksFilesSidebarProps>(
         </Tabs>
       </div>
     );
-  },
+  }
 );
 
 TasksFilesSidebar.displayName = "TasksFilesSidebar";

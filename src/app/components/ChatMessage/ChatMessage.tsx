@@ -8,7 +8,10 @@ import { MarkdownContent } from "../MarkdownContent/MarkdownContent";
 import type { SubAgent, ToolCall } from "../../types/types";
 import styles from "./ChatMessage.module.scss";
 import { Message } from "@langchain/langgraph-sdk";
-import { extractStringFromMessageContent } from "../../utils/utils";
+import {
+  extractStringFromMessageContent,
+  parseImageUrlsFromContent,
+} from "../../utils/utils";
 
 interface ChatMessageProps {
   message: Message;
@@ -21,8 +24,36 @@ interface ChatMessageProps {
 export const ChatMessage = React.memo<ChatMessageProps>(
   ({ message, toolCalls, showAvatar, onSelectSubAgent, selectedSubAgent }) => {
     const isUser = message.type === "human";
+    console.log("[ChatMessage] Is user:", {
+      isUser,
+    });
     const messageContent = extractStringFromMessageContent(message);
-    const hasContent = messageContent && messageContent.trim() !== "";
+
+    // Parse image URLs from message content for user messages
+    const { cleanText, imageUrls } = useMemo(
+      () =>
+        isUser
+          ? parseImageUrlsFromContent(messageContent)
+          : { cleanText: messageContent, imageUrls: [] },
+      [messageContent, isUser]
+    );
+    console.log("[ChatMessage] Message content:", {
+      messageContent,
+    });
+    console.log("[ChatMessage] Clean text:", {
+      cleanText,
+    });
+    console.log("[ChatMessage] Image URLs:", {
+      imageUrls,
+    });
+
+    const displayContent = isUser ? cleanText : messageContent;
+    const hasContent = displayContent && displayContent.trim() !== "";
+    const hasImages = imageUrls.length > 0;
+    console.log("[ChatMessage] Has images:", {
+      hasImages,
+      imageUrls,
+    });
     const hasToolCalls = toolCalls.length > 0;
     const subAgents = useMemo(() => {
       return toolCalls
@@ -53,13 +84,13 @@ export const ChatMessage = React.memo<ChatMessageProps>(
     useEffect(() => {
       if (
         subAgents.some(
-          (subAgent: SubAgent) => subAgent.id === selectedSubAgent?.id,
+          (subAgent: SubAgent) => subAgent.id === selectedSubAgent?.id
         )
       ) {
         onSelectSubAgent(
           subAgents.find(
-            (subAgent: SubAgent) => subAgent.id === selectedSubAgent?.id,
-          )!,
+            (subAgent: SubAgent) => subAgent.id === selectedSubAgent?.id
+          )!
         );
       }
     }, [selectedSubAgent, onSelectSubAgent, subAgentsString]);
@@ -82,10 +113,22 @@ export const ChatMessage = React.memo<ChatMessageProps>(
           {hasContent && (
             <div className={styles.bubble}>
               {isUser ? (
-                <p className={styles.text}>{messageContent}</p>
+                <p className={styles.text}>{displayContent}</p>
               ) : (
-                <MarkdownContent content={messageContent} />
+                <MarkdownContent content={displayContent} />
               )}
+            </div>
+          )}
+          {hasImages && (
+            <div className={styles.images}>
+              {imageUrls.map((url, index) => (
+                <img
+                  key={index}
+                  src={url}
+                  alt={`Uploaded image ${index + 1}`}
+                  className={styles.uploadedImage}
+                />
+              ))}
             </div>
           )}
           {hasToolCalls && (
@@ -110,7 +153,7 @@ export const ChatMessage = React.memo<ChatMessageProps>(
         </div>
       </div>
     );
-  },
+  }
 );
 
 ChatMessage.displayName = "ChatMessage";
