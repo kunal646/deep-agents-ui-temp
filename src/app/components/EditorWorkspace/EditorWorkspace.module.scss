@@ -1,0 +1,283 @@
+@use "../../styles/variables" as *;
+
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--color-background);
+  overflow: hidden;
+}
+
+.tabBar {
+  display: flex;
+  align-items: center;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  height: 40px;
+  flex-shrink: 0;
+  padding: 0 $spacing-sm;
+}
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 2px;
+  }
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  background-color: var(--color-border-light);
+  border-top-left-radius: $radius-sm;
+  border-top-right-radius: $radius-sm;
+  cursor: pointer;
+  transition: background-color $transition-base;
+  user-select: none;
+  white-space: nowrap;
+  max-width: 200px;
+  min-width: 120px;
+
+  &:hover {
+    background-color: var(--color-surface);
+  }
+
+  &.tabActive {
+    background-color: var(--color-background);
+    border-bottom: 2px solid var(--color-primary);
+  }
+}
+
+.tabLabel {
+  font-size: $font-size-sm;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.tabDot {
+  color: var(--color-warning, #f59e0b);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.tabClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  opacity: 0;
+  transition: opacity $transition-base, background-color $transition-base;
+
+  .tab:hover & {
+    opacity: 1;
+  }
+
+  &:hover {
+    background-color: var(--color-border);
+    opacity: 1;
+  }
+}
+
+.chatToggle {
+  margin-left: $spacing-sm;
+  flex-shrink: 0;
+}
+
+.contentRow {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.editorArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.editorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-sm $spacing-md;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.fileName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: var(--color-text-primary);
+}
+
+.languageBadge {
+  font-size: $font-size-xs;
+  padding: 2px 8px;
+  background-color: var(--color-border-light);
+  border-radius: $radius-sm;
+  color: var(--color-text-secondary);
+}
+
+.unsavedIndicator {
+  font-size: $font-size-xs;
+  color: var(--color-warning, #f59e0b);
+}
+
+.saveButton {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+}
+
+.editorContainer {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.mediaContainer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-lg;
+  background-color: var(--color-background);
+  overflow: auto;
+
+  audio,
+  video {
+    max-width: 100%;
+    max-height: 100%;
+    outline: none;
+  }
+
+  audio {
+    width: 100%;
+  }
+
+  video {
+    width: 100%;
+    height: auto;
+  }
+}
+
+.mediaError {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  text-align: center;
+  color: var(--color-text-secondary);
+
+  p {
+    margin: 0;
+    font-size: $font-size-sm;
+  }
+
+  a {
+    color: var(--color-primary);
+    text-decoration: none;
+    padding: $spacing-xs $spacing-sm;
+    border: 1px solid var(--color-border);
+    border-radius: $radius-sm;
+    transition: background-color $transition-base;
+
+    &:hover {
+      background-color: var(--color-border-light);
+    }
+  }
+}
+
+.resizeHandle {
+  width: 4px;
+  background-color: var(--color-border);
+  cursor: col-resize;
+  flex-shrink: 0;
+  position: relative;
+  transition: background-color $transition-base;
+
+  &:hover {
+    background-color: var(--color-primary);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    right: -2px;
+    top: 0;
+    bottom: 0;
+    cursor: col-resize;
+  }
+}
+
+.chatPanel {
+  width: 400px;
+  border-left: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.emptyWorkspace {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary);
+  font-size: $font-size-sm;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+

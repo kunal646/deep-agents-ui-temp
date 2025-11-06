@@ -205,3 +205,47 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.fileBrowserHeader {
+  padding: $spacing-md;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.pathControls {
+  display: flex;
+  gap: $spacing-xs;
+}
+
+.pathButton {
+  padding: $spacing-xs;
+  height: auto;
+  
+  &:hover {
+    background-color: var(--color-border-light);
+  }
+}
+
+.currentPath {
+  font-size: $font-size-xs;
+  color: var(--color-text-secondary);
+  word-break: break-all;
+}
+
+.fileSize {
+  font-size: $font-size-xs;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}

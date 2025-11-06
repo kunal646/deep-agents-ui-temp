@@ -18,6 +18,8 @@ export interface SubAgent {
 export interface FileItem {
   path: string;
   content: string;
+  mediaUrl?: string;  // Blob URL for media files (audio/video)
+  mediaType?: string; // MIME type (e.g., 'audio/mpeg', 'video/mp4')
 }
 
 export interface FileMetadata {
