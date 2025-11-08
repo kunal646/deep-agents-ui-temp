@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import type { FileItem } from "../../types/types";
 import styles from "./EditorWorkspace.module.scss";
 import dynamic from "next/dynamic";
+import { useFileWatcher, type FileChangeEvent } from "../../hooks/useFileWatcher";
 
 const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
@@ -54,6 +55,7 @@ export const EditorWorkspace = React.memo<EditorWorkspaceProps>(
     const resizeRef = useRef<HTMLDivElement>(null);
     const contentRowRef = useRef<HTMLDivElement>(null);
     const previousFilesRef = useRef<FileItem[]>([]);
+    const fileChangeNotificationsRef = useRef<Set<string>>(new Set());
 
     // Initialize file contents
     useEffect(() => {
@@ -212,6 +214,135 @@ export const EditorWorkspace = React.memo<EditorWorkspaceProps>(
         }
       }
     }, [activeFileId, openFiles, onFileClose]);
+
+    // Handle file reload from API
+    const reloadFile = useCallback(async (filePath: string) => {
+      try {
+        const response = await fetch(`${FILE_API_URL}/files/${encodeURIComponent(filePath)}`);
+        if (!response.ok) {
+          throw new Error(`Failed to reload file: ${response.statusText}`);
+        }
+        const fileData = await response.json();
+        const newContent = fileData.content || '';
+        
+        setFileContents(prev => ({
+          ...prev,
+          [filePath]: newContent
+        }));
+        
+        // Update the file in openFiles via onFileSave callback
+        onFileSave(filePath, newContent);
+        
+        return newContent;
+      } catch (error: any) {
+        console.error('Error reloading file:', error);
+        throw error;
+      }
+    }, [onFileSave]);
+
+    // Handle file change events from backend (file_created, file_updated, file_deleted)
+    const handleFileChange = useCallback(async (event: FileChangeEvent) => {
+      const { path, type: changeType } = event;
+      
+      // Backend sends paths like "s.txt" but frontend stores "agent_data/s.txt"
+      // Try to find the file by exact match first, then by filename match
+      let openFile = openFiles.find(f => f.path === path);
+      
+      // If exact match fails, try matching by filename (backend sends just filename)
+      if (!openFile) {
+        openFile = openFiles.find(f => {
+          const fileName = f.path.split('/').pop() || f.path.split('\\').pop();
+          return f.path.endsWith(path) || 
+                 f.path.endsWith(`/${path}`) ||
+                 f.path.endsWith(`\\${path}`) ||
+                 fileName === path;
+        });
+      }
+      
+      if (!openFile) {
+        // File is not open, no action needed
+        return;
+      }
+
+      // Use the actual file path from openFiles for consistency
+      const actualPath = openFile.path;
+
+      // Skip if we just saved this file (avoid reloading our own saves)
+      if (savingFileId === actualPath) {
+        return;
+      }
+
+      // Debounce: Skip if we've already notified about this file recently
+      const notificationKey = `${actualPath}-${changeType}`;
+      if (fileChangeNotificationsRef.current.has(notificationKey)) {
+        return;
+      }
+      fileChangeNotificationsRef.current.add(notificationKey);
+      setTimeout(() => {
+        fileChangeNotificationsRef.current.delete(notificationKey);
+      }, 2000);
+
+      if (changeType === 'file_deleted') {
+        // File was deleted externally
+        const hasUnsavedChanges = (fileContents[actualPath] || '') !== (openFile.content || '');
+        if (hasUnsavedChanges) {
+          const shouldClose = window.confirm(
+            `File "${actualPath}" was deleted externally, but you have unsaved changes. Do you want to close this tab?`
+          );
+          if (shouldClose) {
+            onFileClose(actualPath);
+          }
+        } else {
+          onFileClose(actualPath);
+        }
+        return;
+      }
+
+      if (changeType === 'file_updated') {
+        // Check if file has unsaved changes
+        const currentContent = fileContents[actualPath] || '';
+        const originalContent = openFile.content || '';
+        const hasUnsavedChanges = currentContent !== originalContent;
+
+        if (hasUnsavedChanges) {
+          // File was modified externally but we have unsaved changes
+          const shouldReload = window.confirm(
+            `File "${actualPath}" was modified externally. Do you want to reload it? Your unsaved changes will be lost.`
+          );
+          if (shouldReload) {
+            try {
+              await reloadFile(actualPath);
+            } catch (error: any) {
+              alert(`Failed to reload file: ${error.message}`);
+            }
+          }
+        } else {
+          // No unsaved changes, auto-reload
+          try {
+            await reloadFile(actualPath);
+          } catch (error: any) {
+            console.error(`[EditorWorkspace] Failed to auto-reload file: ${actualPath}`, error);
+          }
+        }
+      } else if (changeType === 'file_created') {
+        // File was created (might be a new file we're watching)
+        // Just reload to get the content
+        try {
+          await reloadFile(actualPath);
+        } catch (error: any) {
+          console.error(`[EditorWorkspace] Failed to reload created file: ${actualPath}`, error);
+        }
+      }
+    }, [openFiles, fileContents, savingFileId, reloadFile, onFileClose, onFileSave]);
+
+    // Set up file watcher
+    useFileWatcher({
+      enabled: true,
+      onFileChanged: handleFileChange,
+      onError: (error) => {
+        console.error('[EditorWorkspace] File watcher error:', error);
+      },
+    });
 
     return (
       <div className={styles.workspace}>

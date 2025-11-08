@@ -18,6 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import type { TodoItem, FileItem } from "../../types/types";
 import styles from "./TasksFilesSidebar.module.scss";
+import { useFileWatcher, type FileChangeEvent } from "../../hooks/useFileWatcher";
 
 const FILE_API_URL = 'http://localhost:8001/api';
 
@@ -105,6 +106,24 @@ export const TasksFilesSidebar = React.memo<TasksFilesSidebarProps>(
         setLoadingFiles(false);
       }
     }, []);
+
+    // Auto-refresh sidebar when files change
+    const handleFileChange = useCallback((event: FileChangeEvent) => {
+      // Only refresh if we're using file system view
+      if (useFileSystem) {
+        // Refresh the current directory to show new/deleted files
+        loadFiles(currentPath);
+      }
+    }, [useFileSystem, currentPath, loadFiles]);
+
+    // Set up file watcher to auto-refresh sidebar
+    useFileWatcher({
+      enabled: useFileSystem, // Only watch when using file system view
+      onFileChanged: handleFileChange,
+      onError: (error) => {
+        console.error('[TasksFilesSidebar] File watcher error:', error);
+      },
+    });
 
     // Load file content from API
     const loadFileContent = useCallback(async (filePath: string) => {
