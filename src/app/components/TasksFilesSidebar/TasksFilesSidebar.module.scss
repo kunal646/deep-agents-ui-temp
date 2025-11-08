@@ -3,8 +3,7 @@
 .sidebar {
   width: $sidebar-width;
   height: 100%;
-  background-color: var(--color-surface);
-  border-right: 1px solid var(--color-border);
+  background-color: var(--color-background);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -13,8 +12,7 @@
 .sidebarCollapsed {
   width: $sidebar-collapsed-width;
   height: 100%;
-  background-color: var(--color-surface);
-  border-right: 1px solid var(--color-border);
+  background-color: var(--color-background);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -25,22 +23,24 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: $spacing-md;
-  height: 60px;
-  border-bottom: 1px solid var(--color-border);
+  padding: $spacing-md $spacing-lg;
+  height: 48px;
 }
 
 .title {
-  font-size: $font-size-lg;
-  font-weight: $font-weight-semibold;
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
   margin: 0;
+  color: var(--color-text-primary);
 }
 
 .toggleButton {
   padding: $spacing-xs;
+  color: var(--color-text-secondary);
 
   &:hover {
-    background-color: var(--color-border-light);
+    background-color: var(--color-interactive-hover);
+    color: var(--color-text-primary);
   }
 }
 
@@ -52,13 +52,13 @@
 }
 
 .tabsList {
-  margin: $spacing-md !important;
-  background-color: var(--color-border-light) !important;
+  margin: $spacing-md $spacing-lg !important;
+  background-color: transparent !important;
   display: flex !important;
   gap: $spacing-xs !important;
-  padding: $spacing-xs !important;
-  border-radius: $radius-md !important;
-  width: calc(100% - #{$spacing-md * 2}) !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  width: calc(100% - #{$spacing-lg * 2}) !important;
   height: auto !important;
   justify-content: stretch !important;
 }
@@ -67,14 +67,14 @@
   flex: 1;
   font-size: $font-size-sm;
   padding: $spacing-sm $spacing-md;
-  border-radius: $radius-sm;
+  border-radius: 4px;
   background: transparent;
   transition: all $transition-base;
+  font-weight: $font-weight-medium;
 
   &[data-state="active"] {
-    background-color: var(--color-background);
-    color: var(--color-text-primary);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background-color: var(--color-primary);
+    color: var(--color-text-white);
   }
 
   &[data-state="inactive"] {
@@ -82,7 +82,7 @@
 
     &:hover {
       color: var(--color-text-primary);
-      background-color: rgba(0, 0, 0, 0.05);
+      background-color: var(--color-interactive-hover);
     }
   }
 }
@@ -95,6 +95,23 @@
 
 .scrollArea {
   height: 100%;
+
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: $radius-full;
+
+    &:hover {
+      background: var(--color-text-tertiary);
+    }
+  }
 }
 
 .emptyState {
@@ -110,7 +127,7 @@
 
 // Todo Styles
 .todoGroups {
-  padding: $spacing-md;
+  padding: $spacing-md $spacing-lg;
 }
 
 .todoGroup {
@@ -126,17 +143,23 @@
   font-weight: $font-weight-semibold;
   color: var(--color-text-secondary);
   text-transform: uppercase;
+  letter-spacing: 0.05em;
   margin-bottom: $spacing-sm;
+  padding: 0 $spacing-sm;
 }
 
 .todoItem {
   display: flex;
   align-items: flex-start;
   gap: $spacing-sm;
-  padding: $spacing-sm;
-  border-radius: $radius-md;
+  padding: $spacing-sm $spacing-md;
+  border-radius: 4px;
   margin-bottom: $spacing-xs;
   transition: background-color $transition-base;
+
+  &:hover {
+    background-color: var(--color-interactive-hover);
+  }
 
   &:last-child {
     margin-bottom: 0;
@@ -167,7 +190,7 @@
 
 // File Tree Styles
 .fileTree {
-  padding: $spacing-md;
+  padding: $spacing-md $spacing-lg;
 }
 
 .fileItem {
@@ -183,17 +206,28 @@
   display: flex;
   align-items: center;
   gap: $spacing-sm;
-  padding: $spacing-xs $spacing-sm;
+  padding: $spacing-sm $spacing-md;
   cursor: pointer;
-  transition: background-color $transition-base;
+  transition: all $transition-base;
+  border-radius: 4px;
+  position: relative;
 
   &:hover {
-    background-color: var(--color-border-light);
+    background-color: var(--color-surface-light);
+  }
+
+  &:active {
+    background-color: var(--color-interactive-hover);
   }
 
   svg {
     flex-shrink: 0;
     color: var(--color-text-secondary);
+    transition: color $transition-base;
+  }
+
+  &:hover svg {
+    color: var(--color-primary);
   }
 }
 
@@ -207,8 +241,7 @@
 }
 
 .fileBrowserHeader {
-  padding: $spacing-md;
-  border-bottom: 1px solid var(--color-border);
+  padding: $spacing-md $spacing-lg;
   display: flex;
   flex-direction: column;
   gap: $spacing-sm;
@@ -222,9 +255,12 @@
 .pathButton {
   padding: $spacing-xs;
   height: auto;
+  color: var(--color-text-secondary);
+  border-radius: 4px;
   
   &:hover {
-    background-color: var(--color-border-light);
+    background-color: var(--color-interactive-hover);
+    color: var(--color-text-primary);
   }
 }
 
@@ -248,4 +284,5 @@
 
 .spinning {
   animation: spin 1s linear infinite;
+  color: var(--color-primary);
 }

@@ -213,152 +213,148 @@ export const EditorWorkspace = React.memo<EditorWorkspaceProps>(
       }
     }, [activeFileId, openFiles, onFileClose]);
 
-    if (openFiles.length === 0) {
-      return (
-        <div className={styles.emptyWorkspace}>
-          <p>No files open. Click on a file in the sidebar to open it.</p>
-        </div>
-      );
-    }
-
     return (
       <div className={styles.workspace}>
-        {/* Tab Bar */}
-        <div className={styles.tabBar}>
-          <div className={styles.tabs}>
-            {openFiles.map((file) => {
-              const fileContent = fileContents[file.path] || file.content || '';
-              const isChanged = fileContent !== (file.content || '');
-              const isActive = file.path === activeFileId;
+        {/* Tab Bar - only show if there are files */}
+        {openFiles.length > 0 && (
+          <div className={styles.tabBar}>
+            <div className={styles.tabs}>
+              {openFiles.map((file) => {
+                const fileContent = fileContents[file.path] || file.content || '';
+                const isChanged = fileContent !== (file.content || '');
+                const isActive = file.path === activeFileId;
 
-              return (
-                <div
-                  key={file.path}
-                  className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
-                  onClick={() => handleTabClick(file.path)}
-                >
-                  <span className={styles.tabLabel}>{file.path.split('/').pop() || file.path}</span>
-                  {isChanged && <span className={styles.tabDot}>●</span>}
-                  {openFiles.length > 1 && (
-                    <button
-                      className={styles.tabClose}
-                      onClick={(e) => handleTabClose(e, file.path)}
-                      aria-label="Close tab"
-                    >
-                      <X size={12} />
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+                return (
+                  <div
+                    key={file.path}
+                    className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
+                    onClick={() => handleTabClick(file.path)}
+                  >
+                    <span className={styles.tabLabel}>{file.path.split('/').pop() || file.path}</span>
+                    {isChanged && <span className={styles.tabDot}>●</span>}
+                    {openFiles.length > 1 && (
+                      <button
+                        className={styles.tabClose}
+                        onClick={(e) => handleTabClose(e, file.path)}
+                        aria-label="Close tab"
+                      >
+                        <X size={12} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {onToggleChat && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggleChat}
+                className={styles.chatToggle}
+              >
+                <MessageSquare size={16} />
+              </Button>
+            )}
           </div>
-          {onToggleChat && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleChat}
-              className={styles.chatToggle}
-            >
-              <MessageSquare size={16} />
-            </Button>
-          )}
-        </div>
+        )}
 
         {/* Content Row: Editor + Chat */}
         <div ref={contentRowRef} className={styles.contentRow}>
-          {/* Editor Area */}
-          <div className={styles.editorArea}>
-            {activeFile && (
-              <>
-                <div className={styles.editorHeader}>
-                  <div className={styles.fileInfo}>
-                    <span className={styles.fileName}>{activeFile.path}</span>
-                    <span className={styles.languageBadge}>
-                      {isMediaFile(activeFile) 
-                        ? (activeFile.mediaType?.startsWith('audio/') ? 'Audio' : 'Video')
-                        : getLanguageFromPath(activeFile.path)
-                      }
-                    </span>
-                    {hasChanges && (
-                      <span className={styles.unsavedIndicator}>● Unsaved</span>
-                    )}
-                  </div>
-                  {!isMediaFile(activeFile) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleSave}
-                      disabled={!hasChanges || savingFileId === activeFileId}
-                      className={styles.saveButton}
-                    >
-                      {savingFileId === activeFileId ? (
-                        <LoaderCircle size={16} className={styles.spinning} />
-                      ) : (
-                        <Save size={16} />
-                      )}
-                      Save
-                    </Button>
-                  )}
-                </div>
-                <div className={styles.editorContainer}>
-                  {isMediaFile(activeFile) ? (
-                    // Render media player for media files
-                    <div className={styles.mediaContainer}>
-                      {activeFile.mediaType?.startsWith('audio/') ? (
-                        <audio 
-                          controls 
-                          src={activeFile.mediaUrl} 
-                          style={{ width: '100%', maxHeight: '100%' }}
-                          preload="metadata"
-                        />
-                      ) : activeFile.mediaType?.startsWith('video/') ? (
-                        <video 
-                          controls 
-                          src={activeFile.mediaUrl} 
-                          style={{ width: '100%', maxHeight: '100%' }}
-                          preload="metadata"
-                        />
-                      ) : (
-                        <div className={styles.mediaError}>
-                          <p>Unsupported media type: {activeFile.mediaType}</p>
-                          {activeFile.mediaUrl && (
-                            <a href={activeFile.mediaUrl} download={activeFile.path.split('/').pop()}>
-                              Download file
-                            </a>
-                          )}
-                        </div>
+          {/* Editor Area - only show when there are files */}
+          {openFiles.length > 0 && (
+            <div className={styles.editorArea}>
+              {activeFile && (
+                <>
+                  <div className={styles.editorHeader}>
+                    <div className={styles.fileInfo}>
+                      <span className={styles.fileName}>{activeFile.path}</span>
+                      <span className={styles.languageBadge}>
+                        {isMediaFile(activeFile) 
+                          ? (activeFile.mediaType?.startsWith('audio/') ? 'Audio' : 'Video')
+                          : getLanguageFromPath(activeFile.path)
+                        }
+                      </span>
+                      {hasChanges && (
+                        <span className={styles.unsavedIndicator}>● Unsaved</span>
                       )}
                     </div>
-                  ) : (
-                    // Render Monaco Editor for text files
-                    <Editor
-                      height="100%"
-                      language={getLanguageFromPath(activeFile.path)}
-                      value={fileContents[activeFile.path] || activeFile.content || ''}
-                      onChange={handleContentChange}
-                      theme="vs-dark"
-                      options={{
-                        minimap: { enabled: true },
-                        fontSize: 14,
-                        wordWrap: 'on' as const,
-                        automaticLayout: true,
-                        scrollBeyondLastLine: false,
-                        tabSize: 2,
-                        insertSpaces: true,
-                        lineNumbers: 'on' as const,
-                        renderWhitespace: 'selection' as const,
-                        formatOnPaste: true,
-                        formatOnType: true,
-                      }}
-                    />
-                  )}
-                </div>
-              </>
-            )}
-          </div>
+                    {!isMediaFile(activeFile) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleSave}
+                        disabled={!hasChanges || savingFileId === activeFileId}
+                        className={styles.saveButton}
+                      >
+                        {savingFileId === activeFileId ? (
+                          <LoaderCircle size={16} className={styles.spinning} />
+                        ) : (
+                          <Save size={16} />
+                        )}
+                        Save
+                      </Button>
+                    )}
+                  </div>
+                  <div className={styles.editorContainer}>
+                    {isMediaFile(activeFile) ? (
+                      // Render media player for media files
+                      <div className={styles.mediaContainer}>
+                        {activeFile.mediaType?.startsWith('audio/') ? (
+                          <audio 
+                            controls 
+                            src={activeFile.mediaUrl} 
+                            style={{ width: '100%', maxHeight: '100%' }}
+                            preload="metadata"
+                          />
+                        ) : activeFile.mediaType?.startsWith('video/') ? (
+                          <video 
+                            controls 
+                            src={activeFile.mediaUrl} 
+                            style={{ width: '100%', maxHeight: '100%' }}
+                            preload="metadata"
+                          />
+                        ) : (
+                          <div className={styles.mediaError}>
+                            <p>Unsupported media type: {activeFile.mediaType}</p>
+                            {activeFile.mediaUrl && (
+                              <a href={activeFile.mediaUrl} download={activeFile.path.split('/').pop()}>
+                                Download file
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      // Render Monaco Editor for text files
+                      <Editor
+                        height="100%"
+                        language={getLanguageFromPath(activeFile.path)}
+                        value={fileContents[activeFile.path] || activeFile.content || ''}
+                        onChange={handleContentChange}
+                        theme="vs-dark"
+                        options={{
+                          minimap: { enabled: true },
+                          fontSize: 14,
+                          wordWrap: 'on' as const,
+                          automaticLayout: true,
+                          scrollBeyondLastLine: false,
+                          tabSize: 2,
+                          insertSpaces: true,
+                          lineNumbers: 'on' as const,
+                          renderWhitespace: 'selection' as const,
+                          formatOnPaste: true,
+                          formatOnType: true,
+                        }}
+                      />
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
-          {/* Resize Handle */}
-          {showChat && chatPanel && (
+          {/* Resize Handle - only show when there are files and chat is visible */}
+          {openFiles.length > 0 && showChat && chatPanel && (
             <div
               ref={resizeRef}
               className={styles.resizeHandle}
@@ -369,9 +365,12 @@ export const EditorWorkspace = React.memo<EditorWorkspaceProps>(
             />
           )}
 
-          {/* Chat Panel */}
+          {/* Chat Panel - full width when no files, otherwise use chatPanelWidth */}
           {showChat && chatPanel && (
-            <div className={styles.chatPanel} style={{ width: `${chatPanelWidth}px` }}>
+            <div 
+              className={styles.chatPanel} 
+              style={{ width: openFiles.length === 0 ? '100%' : `${chatPanelWidth}px` }}
+            >
               {chatPanel}
             </div>
           )}

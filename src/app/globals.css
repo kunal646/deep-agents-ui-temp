@@ -1,33 +1,60 @@
 @import "tailwindcss";
 
 :root {
-  /* App-specific color variables */
-  --color-primary: #1c3c3c;
-  --color-user-message: #076699;
-  --color-avatar-bg: #ebe8fe;
-  --color-secondary: #1c3c3c;
+  /* Chromatic Labs Brand Colors */
+  --color-primary: #FF7644;
+  --color-primary-gradient: linear-gradient(135.28deg, #FF564E 8.66%, #FFC16F 132.22%);
+  --color-accent-yellow: #FFC16F;
+  --color-accent-red: #FF564E;
+  
+  /* Backgrounds */
+  --color-background: #F7F5F3;
+  --color-surface: #FFFFFF;
+  --color-surface-light: #FFF7F0;
+  --color-surface-beige: #FAEED7;
+  --color-surface-gray: #F7F7F7;
+  
+  /* Text */
+  --color-text-primary: #000000;
+  --color-text-secondary: rgba(0, 0, 0, 0.6);
+  --color-text-tertiary: rgba(0, 0, 0, 0.7);
+  --color-text-white: #FFFFFF;
+  --color-text-white-muted: rgba(255, 255, 255, 0.8);
+  --color-text-highlight: #9A3412;
+  
+  /* Borders */
+  --color-border-accent: #FFD4B8;
+  --color-border: rgba(0, 0, 0, 0.1);
+  --color-border-light: rgba(0, 0, 0, 0.05);
+  
+  /* Interactive */
+  --color-interactive-hover: #F3F4F6;
+  --color-interactive-active: #FFC16F;
+  --color-interactive-disabled: rgba(0, 0, 0, 0.3);
+  
+  /* User message - use coral */
+  --color-user-message: #FF7644;
+  
+  /* Avatar backgrounds - use light peach */
+  --color-avatar-bg: #FFF7F0;
+  --color-subagent-hover: #FAEED7;
+  --color-secondary: #FF7644;
+  
+  /* Status colors */
   --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
-  --color-background: #f9f9f9;
-  --color-subagent-hover: #d0c9fe;
-  --color-surface: #f9fafb;
-  --color-border: #e5e7eb;
-  --color-border-light: #f3f4f6;
-  --color-text-primary: #111827;
-  --color-text-secondary: #6b7280;
-  --color-text-tertiary: #9ca3af;
+  --color-error: #FF564E;
+  --color-warning: #FFC16F;
 
   /* Tailwind/Radix UI component variables */
-  --background: #f9f9f9;
-  --foreground: #111827;
-  --muted: #f3f4f6;
-  --muted-foreground: #6b7280;
-  --primary: #1c3c3c;
-  --primary-foreground: #ffffff;
-  --input: #e5e7eb;
-  --ring: #1c3c3c;
-  --destructive: #ef4444;
+  --background: #F7F5F3;
+  --foreground: #000000;
+  --muted: #F3F4F6;
+  --muted-foreground: rgba(0, 0, 0, 0.6);
+  --primary: #FF7644;
+  --primary-foreground: #FFFFFF;
+  --input: rgba(0, 0, 0, 0.1);
+  --ring: #FF7644;
+  --destructive: #FF564E;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -76,9 +103,7 @@
 html,
 body {
   height: 100%;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, sans-serif;
+  font-family: "Geist Sans", "Helvetica Neue", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
   font-size: 1rem;
   line-height: 1.5;
   color: var(--color-text-primary);

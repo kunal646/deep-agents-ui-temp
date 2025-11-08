@@ -6,28 +6,22 @@
   gap: $spacing-md;
   width: 100%;
   padding: $spacing-md $spacing-lg;
-  background-color: var(--color-avatar-bg);
-  border: 1px solid var(--color-border);
-  border-radius: $radius-md;
+  background-color: var(--color-surface);
+  border-radius: 4px;
   text-align: left;
-  transition: all $transition-base;
+  transition: background-color $transition-base;
   cursor: pointer;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 
   &:hover {
-    background-color: var(--color-subagent-hover);
-    transform: translateX(2px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  &:active {
-    transform: translateX(0);
+    background-color: var(--color-surface-light);
   }
 }
 
 .icon {
   width: 20px;
   height: 20px;
-  color: var(--color-secondary);
+  color: var(--color-primary);
   flex-shrink: 0;
 }
 

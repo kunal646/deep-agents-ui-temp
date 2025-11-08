@@ -1,9 +1,9 @@
-import { useCallback, useMemo, useEffect } from "react";
+import { useCallback, useMemo, useEffect, useState, useRef } from "react";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import { type Message } from "@langchain/langgraph-sdk";
 import { getDeployment } from "@/lib/environment/deployments";
 import { v4 as uuidv4 } from "uuid";
-import type { MessageContent, TodoItem } from "../types/types";
+import type { MessageContent, TodoItem, InterruptState, HITLDecision } from "../types/types";
 import { createClient } from "@/lib/client";
 import { useAuthContext } from "@/providers/Auth";
 
@@ -24,6 +24,12 @@ export function useChat(
   const deployment = useMemo(() => getDeployment(), []);
   const { session } = useAuthContext();
   const accessToken = session?.accessToken;
+
+  // HITL state
+  const [interruptState, setInterruptState] = useState<InterruptState | null>(null);
+  const [enableHITL, setEnableHITL] = useState(true); // Feature flag - enabled by default
+  const handledInterruptIdsRef = useRef<Set<string>>(new Set());
+  const lastInterruptIdRef = useRef<string | null>(null); // Track last interrupt ID to prevent unnecessary updates
 
   const agentId = useMemo(() => {
     if (!deployment?.agentId) {
@@ -130,6 +136,13 @@ export function useChat(
       deploymentUrl: deployment?.deploymentUrl,
     });
   }, [agentId, threadId, accessToken, deployment]);
+
+  // Clear handled interrupts when thread changes
+  useEffect(() => {
+    handledInterruptIdsRef.current.clear();
+    setInterruptState(null);
+    lastInterruptIdRef.current = null;
+  }, [threadId]);
 
   // Monitor stream errors
   useEffect(() => {
@@ -291,6 +304,205 @@ export function useChat(
     stream.stop();
   }, [stream, threadId]);
 
+  // HITL: Use stream.interrupt property (official LangGraph SDK way)
+  // Fallback to polling thread state if stream.interrupt is not available
+  useEffect(() => {
+    if (!enableHITL || !threadId || !accessToken) {
+      setInterruptState(null);
+      lastInterruptIdRef.current = null;
+      return;
+    }
+
+    let cancelled = false;
+
+    const checkInterrupts = async () => {
+      try {
+        // First, try to use stream.interrupt (official way)
+        const streamAny = stream as any;
+        const interrupt = streamAny?.interrupt;
+
+        if (interrupt) {
+          const interruptValue = interrupt?.value || interrupt;
+          const interruptId = interrupt?.id;
+          
+          // Skip if we've already handled this interrupt
+          if (interruptId && handledInterruptIdsRef.current.has(interruptId)) {
+            if (!cancelled && lastInterruptIdRef.current !== null) {
+              setInterruptState(null);
+              lastInterruptIdRef.current = null;
+            }
+            return;
+          }
+
+          // Only update if interrupt ID actually changed
+          if (interruptId === lastInterruptIdRef.current) {
+            return; // Already showing this interrupt
+          }
+
+          const nodeName = 
+            interruptValue?.action_requests?.[0]?.name ||
+            interruptValue?.name ||
+            "unknown";
+
+          if (!cancelled) {
+            lastInterruptIdRef.current = interruptId || null;
+            setInterruptState({
+              runId: streamAny?.runId || "unknown",
+              threadId: threadId,
+              nodeName: nodeName,
+              pendingAction: interruptValue,
+              state: streamAny?.values || {},
+              interruptId: interruptId,
+            });
+          }
+          return;
+        }
+
+        // Fallback: Check thread state directly (if stream.interrupt not available)
+        const client = createClient(accessToken);
+        const state = await client.threads.getState(threadId);
+        const stateAny = state as any;
+        
+        const interrupts = stateAny?.interrupts || [];
+        const taskInterrupts = stateAny?.tasks?.flatMap((task: any) => task?.interrupts || []) || [];
+        const allInterrupts = [...interrupts, ...taskInterrupts];
+
+        if (allInterrupts.length > 0 && !cancelled && state.values) {
+          const interrupt = allInterrupts[0];
+          const interruptId = interrupt?.id;
+          
+          if (interruptId && handledInterruptIdsRef.current.has(interruptId)) {
+            if (!cancelled && lastInterruptIdRef.current !== null) {
+              setInterruptState(null);
+              lastInterruptIdRef.current = null;
+            }
+            return;
+          }
+
+          // Only update if interrupt ID actually changed
+          if (interruptId === lastInterruptIdRef.current) {
+            return; // Already showing this interrupt
+          }
+          
+          const interruptValue = interrupt?.value || interrupt;
+          const nodeName = 
+            interruptValue?.action_requests?.[0]?.name ||
+            interruptValue?.name ||
+            "unknown";
+
+          if (!cancelled) {
+            lastInterruptIdRef.current = interruptId || null;
+            setInterruptState({
+              runId: "unknown",
+              threadId: threadId,
+              nodeName: nodeName,
+              pendingAction: interruptValue,
+              state: state.values,
+              interruptId: interruptId,
+            });
+          }
+        } else if (!cancelled) {
+          // Only clear if we had an interrupt before
+          if (lastInterruptIdRef.current !== null) {
+            setInterruptState(null);
+            lastInterruptIdRef.current = null;
+          }
+        }
+      } catch (error) {
+        console.warn("[useChat] HITL check failed (non-critical):", error);
+        if (!cancelled && lastInterruptIdRef.current !== null) {
+          setInterruptState(null);
+          lastInterruptIdRef.current = null;
+        }
+      }
+    };
+
+    // Check immediately and then poll every 2 seconds
+    checkInterrupts();
+    const interval = setInterval(checkInterrupts, 2000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+    // Remove stream from dependencies - use it via closure instead
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enableHITL, threadId, accessToken]);
+
+  // HITL: Resume function
+  const resumeRun = useCallback(
+    async (decision: HITLDecision, editedState?: any) => {
+      // Safety: Only work if interrupt exists
+      if (!interruptState || !accessToken) {
+        console.warn("[useChat] Cannot resume - no interrupt state");
+        return;
+      }
+
+      const interruptId = interruptState.interruptId;
+      
+      // Mark this interrupt as handled immediately to prevent re-detection
+      if (interruptId) {
+        handledInterruptIdsRef.current.add(interruptId);
+        console.log("[useChat] Marking interrupt as handled:", interruptId);
+      }
+      
+      // Clear interrupt state immediately to prevent showing it again
+      setInterruptState(null);
+      lastInterruptIdRef.current = null;
+
+      try {
+        // Use official LangGraph SDK resume method
+        // According to LangChain HITL docs: resume={ "decisions": [{ "type": "approve" }] }
+        // The decisions array should match the order of action_requests in the interrupt
+        const actionRequests = interruptState.pendingAction?.action_requests || [];
+        
+        if (decision === "approve") {
+          // Resume with approve decision for each action request
+          // Format: { decisions: [{ type: "approve" }, ...] } - one per action
+          const resumeValue = {
+            decisions: actionRequests.map(() => ({ type: "approve" })),
+          };
+          
+          stream.submit(undefined, {
+            command: { resume: resumeValue },
+            config: {
+              recursion_limit: 100,
+            },
+          });
+          console.log("[useChat] Run approved and resumed using command.resume", {
+            decisionsCount: resumeValue.decisions.length,
+          });
+        } else if (decision === "reject") {
+          // Resume with reject decision
+          const resumeValue = {
+            decisions: actionRequests.map(() => ({ type: "reject" })),
+          };
+          
+          stream.submit(undefined, {
+            command: { resume: resumeValue },
+            config: {
+              recursion_limit: 100,
+            },
+          });
+          console.log("[useChat] Run rejected using command.resume");
+        }
+      } catch (error) {
+        // Don't throw - log and continue
+        console.error("[useChat] Resume failed:", error);
+        // Remove from handled set if it failed so it can be retried
+        if (interruptId) {
+          handledInterruptIdsRef.current.delete(interruptId);
+          // Re-set interrupt state so user can try again
+          setInterruptState(interruptState);
+          if (interruptState?.interruptId) {
+            lastInterruptIdRef.current = interruptState.interruptId;
+          }
+        }
+      }
+    },
+    [interruptState, accessToken, stream]
+  );
+
   // Filter out unsupported message types to prevent coercion errors
   // LangChain only supports: human, ai, system, developer, tool
   const supportedTypes = ["human", "ai", "system", "developer", "tool"];
@@ -331,5 +543,10 @@ export function useChat(
     isLoading: stream.isLoading,
     sendMessage,
     stopStream,
+    // HITL functionality
+    interruptState: enableHITL ? interruptState : null,
+    resumeRun,
+    enableHITL,
+    setEnableHITL,
   };
 }

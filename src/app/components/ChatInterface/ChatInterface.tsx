@@ -9,19 +9,19 @@ import React, {
   FormEvent,
 } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Send,
-  Bot,
   LoaderCircle,
   SquarePen,
   History,
   X,
   Image as ImageIcon,
   Paperclip,
+  Square,
 } from "lucide-react";
 import { ChatMessage } from "../ChatMessage/ChatMessage";
 import { ThreadHistorySidebar } from "../ThreadHistorySidebar/ThreadHistorySidebar";
+import { HITLPanel } from "../HITLPanel/HITLPanel";
 import type {
   SubAgent,
   TodoItem,
@@ -66,17 +66,27 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(
     const [isUploadingImages, setIsUploadingImages] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    const { messages, isLoading, sendMessage, stopStream } = useChat(
-      threadId,
-      setThreadId,
-      onTodosUpdate,
-      onFilesUpdate
-    );
+    const {
+      messages,
+      isLoading,
+      sendMessage,
+      stopStream,
+      interruptState,
+      resumeRun,
+    } = useChat(threadId, setThreadId, onTodosUpdate, onFilesUpdate);
 
     useEffect(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
+
+    useEffect(() => {
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+        textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+      }
+    }, [input]);
 
     const handleFileSelect = useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,6 +179,10 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(
           );
           setInput("");
           setUploadedImages([]);
+          // Reset textarea height
+          if (textareaRef.current) {
+            textareaRef.current.style.height = "auto";
+          }
         } catch (error) {
           console.error("[ChatInterface] Error uploading images:", error);
           // TODO: Show error to user
@@ -303,7 +317,11 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(
       <div className={styles.container}>
         <div className={styles.header}>
           <div className={styles.headerLeft}>
-            <Bot className={styles.logo} />
+            <img
+              src="/chromatic-logo-landing.svg"
+              alt="Chromatic"
+              className={styles.logo}
+            />
             <h1 className={styles.title}>chromatic agent</h1>
           </div>
           <div className={styles.headerRight}>
@@ -330,7 +348,11 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(
           <div className={styles.messagesContainer}>
             {!hasMessages && !isLoading && !isLoadingThreadState && (
               <div className={styles.emptyState}>
-                <Bot size={48} className={styles.emptyIcon} />
+                <img
+                  src="/chromatic-logo-landing.svg"
+                  alt="Chromatic"
+                  className={styles.emptyIcon}
+                />
                 <h2>Start a conversation or select a thread from history</h2>
               </div>
             )}
@@ -340,16 +362,31 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(
               </div>
             )}
             <div className={styles.messagesList}>
-              {processedMessages.map((data) => (
-                <ChatMessage
-                  key={data.message.id}
-                  message={data.message}
-                  toolCalls={data.toolCalls}
-                  showAvatar={data.showAvatar}
-                  onSelectSubAgent={onSelectSubAgent}
-                  selectedSubAgent={selectedSubAgent}
-                />
-              ))}
+              {processedMessages.map((data, index) => {
+                const isLastMessage = index === processedMessages.length - 1;
+                const shouldShowInterrupt = interruptState && isLastMessage && data.message.type === "ai";
+                
+                return (
+                  <React.Fragment key={data.message.id}>
+                    <ChatMessage
+                      message={data.message}
+                      toolCalls={data.toolCalls}
+                      showAvatar={data.showAvatar}
+                      onSelectSubAgent={onSelectSubAgent}
+                      selectedSubAgent={selectedSubAgent}
+                    />
+                    {shouldShowInterrupt && (
+                      <div className={styles.hitlPanel}>
+                        <HITLPanel
+                          interruptState={interruptState}
+                          onResume={resumeRun}
+                          isLoading={isLoading}
+                        />
+                      </div>
+                    )}
+                  </React.Fragment>
+                );
+              })}
               {isLoading && (
                 <div className={styles.loadingMessage}>
                   <LoaderCircle className={styles.spinner} />
@@ -403,20 +440,29 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(
               >
                 <Paperclip size={20} />
               </Button>
-              <Input
+              <textarea
+                ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Type your message..."
                 disabled={isLoading || isUploadingImages}
                 className={styles.input}
+                rows={1}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit(e as any);
+                  }
+                }}
               />
               {isLoading ? (
                 <Button
                   type="button"
                   onClick={stopStream}
                   className={styles.stopButton}
+                  title="Stop"
                 >
-                  Stop
+                  <Square size={16} />
                 </Button>
               ) : (
                 <Button
@@ -426,6 +472,7 @@ export const ChatInterface = React.memo<ChatInterfaceProps>(
                     isUploadingImages
                   }
                   className={styles.sendButton}
+                  title="Send"
                 >
                   {isUploadingImages ? (
                     <LoaderCircle size={16} className={styles.spinner} />

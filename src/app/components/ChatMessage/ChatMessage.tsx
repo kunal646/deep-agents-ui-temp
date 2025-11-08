@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useMemo } from "react";
-import { User, Bot } from "lucide-react";
 import { SubAgentIndicator } from "../SubAgentIndicator/SubAgentIndicator";
 import { ToolCallBox } from "../ToolCallBox/ToolCallBox";
 import { MarkdownContent } from "../MarkdownContent/MarkdownContent";
@@ -99,16 +98,19 @@ export const ChatMessage = React.memo<ChatMessageProps>(
       <div
         className={`${styles.message} ${isUser ? styles.user : styles.assistant}`}
       >
-        <div
-          className={`${styles.avatar} ${!showAvatar ? styles.avatarHidden : ""}`}
-        >
-          {showAvatar &&
-            (isUser ? (
-              <User className={styles.avatarIcon} />
-            ) : (
-              <Bot className={styles.avatarIcon} />
-            ))}
-        </div>
+        {!isUser && (
+          <div
+            className={`${styles.avatar} ${!showAvatar ? styles.avatarHidden : ""}`}
+          >
+            {showAvatar && (
+              <img
+                src="/chromatic-logo-landing.svg"
+                alt="Chromatic"
+                className={styles.avatarIcon}
+              />
+            )}
+          </div>
+        )}
         <div className={styles.content}>
           {hasContent && (
             <div className={styles.bubble}>

@@ -63,3 +63,14 @@ export interface UploadedImage {
   previewUrl: string;
   uploadedUrl?: string;
 }
+
+export interface InterruptState {
+  runId: string;
+  threadId: string;
+  nodeName: string;
+  pendingAction?: any; // The action waiting for approval
+  state: any; // Current state at interrupt point
+  interruptId?: string; // Unique ID of the interrupt to track handled interrupts
+}
+
+export type HITLDecision = "approve" | "reject" | "edit";

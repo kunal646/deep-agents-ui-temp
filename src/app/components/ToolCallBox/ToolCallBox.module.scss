@@ -2,11 +2,10 @@
 
 .container {
   background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: $radius-md;
+  border-radius: 4px;
   overflow: hidden;
-  width: fit-content;
-  max-width: 70vw;
+  width: 100%;
+  max-width: 100%;
 }
 
 .header {
@@ -20,7 +19,7 @@
   transition: background-color $transition-base;
 
   &:hover:not(:disabled) {
-    background-color: var(--color-border-light);
+    background-color: var(--color-interactive-hover);
   }
 
   &:disabled {
@@ -79,7 +78,6 @@
 
 .content {
   padding: 0 $spacing-md $spacing-md;
-  border-top: 1px solid var(--color-border-light);
 }
 
 .section {
@@ -101,9 +99,8 @@
 
 .codeBlock {
   padding: $spacing-sm;
-  background-color: var(--color-background);
-  border: 1px solid var(--color-border-light);
-  border-radius: $radius-sm;
+  background-color: var(--color-surface-gray);
+  border-radius: 4px;
   font-family: $font-family-mono;
   font-size: $font-size-xs;
   line-height: $line-height-relaxed;
