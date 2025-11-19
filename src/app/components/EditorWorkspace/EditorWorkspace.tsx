@@ -15,6 +15,13 @@ const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 //prod env
 const FILE_API_URL = 'https://agentstoryboard-production.up.railway.app/api';
 
+// Helper function to normalize file path (ensure leading slash for backend API)
+function normalizeFilePath(path: string): string {
+  // Backend expects paths with leading slash (e.g., /app/agent_workspace/...)
+  // Just return as-is since paths from the API already have the correct format
+  return path;
+}
+
 // Helper function to detect language from file extension
 function getLanguageFromPath(path: string): string {
   const ext = path.split('.').pop()?.toLowerCase();
@@ -176,7 +183,7 @@ export const EditorWorkspace = React.memo<EditorWorkspaceProps>(
       setSavingFileId(activeFileId);
 
       try {
-        const response = await fetch(`${FILE_API_URL}/files/${encodeURIComponent(activeFile.path)}`, {
+        const response = await fetch(`${FILE_API_URL}/files/${encodeURIComponent(normalizeFilePath(activeFile.path))}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ content }),
@@ -221,7 +228,7 @@ export const EditorWorkspace = React.memo<EditorWorkspaceProps>(
     // Handle file reload from API
     const reloadFile = useCallback(async (filePath: string) => {
       try {
-        const response = await fetch(`${FILE_API_URL}/files/${encodeURIComponent(filePath)}`);
+        const response = await fetch(`${FILE_API_URL}/files/${encodeURIComponent(normalizeFilePath(filePath))}`);
         if (!response.ok) {
           throw new Error(`Failed to reload file: ${response.statusText}`);
         }

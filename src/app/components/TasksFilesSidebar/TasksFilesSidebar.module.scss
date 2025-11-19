@@ -191,6 +191,10 @@
 // File Tree Styles
 .fileTree {
   padding: $spacing-md $spacing-lg;
+  min-height: 300px;
+  
+  // Add padding at the bottom for drop zone
+  padding-bottom: 100px;
 }
 
 .fileItem {
@@ -285,4 +289,106 @@
 .spinning {
   animation: spin 1s linear infinite;
   color: var(--color-primary);
+}
+
+// Chevron button for folder expansion
+.chevronButton {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-secondary);
+  transition: all $transition-base;
+  flex-shrink: 0;
+  
+  &:hover {
+    color: var(--color-text-primary);
+    background-color: var(--color-interactive-hover);
+    border-radius: 2px;
+  }
+  
+  svg {
+    transition: transform $transition-base;
+  }
+}
+
+// File content wrapper (icon + name)
+.fileContent {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex: 1;
+  min-width: 0;
+}
+
+// Selected state
+.selected {
+  .fileRow {
+    background-color: var(--color-interactive-hover);
+  }
+}
+
+// Dragging states
+.dragging {
+  opacity: 0.5;
+}
+
+.dragOver {
+  .fileRow {
+    background-color: var(--color-primary) !important;
+    
+    * {
+      color: var(--color-text-white) !important;
+    }
+  }
+}
+
+// Context menu icon
+.contextMenuIcon {
+  margin-right: $spacing-xs;
+}
+
+// Rename input
+.renameInput {
+  flex: 1;
+  height: 24px;
+  padding: $spacing-xs;
+  font-size: $font-size-sm;
+  border: 1px solid var(--color-primary);
+  border-radius: 2px;
+  background: var(--color-surface-light);
+  color: var(--color-text-primary);
+  
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.1);
+  }
+}
+
+// Danger item in context menu
+.dangerItem {
+  color: var(--color-error) !important;
+  
+  &:hover {
+    background-color: var(--color-error) !important;
+    color: var(--color-text-white) !important;
+    
+    .contextMenuIcon {
+      color: var(--color-text-white) !important;
+    }
+  }
+}
+
+// Empty state hint
+.emptyHint {
+  margin-top: $spacing-xs !important;
+  font-size: $font-size-xs !important;
+  color: var(--color-text-tertiary) !important;
 }

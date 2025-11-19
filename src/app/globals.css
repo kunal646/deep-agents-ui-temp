@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
 :root {
   /* Chromatic Labs Brand Colors */
   --color-primary: #FF7644;
@@ -45,16 +54,6 @@
   --color-error: #FF564E;
   --color-warning: #FFC16F;
 
-  /* Tailwind/Radix UI component variables */
-  --background: #F7F5F3;
-  --foreground: #000000;
-  --muted: #F3F4F6;
-  --muted-foreground: rgba(0, 0, 0, 0.6);
-  --primary: #FF7644;
-  --primary-foreground: #FFFFFF;
-  --input: rgba(0, 0, 0, 0.1);
-  --ring: #FF7644;
-  --destructive: #FF564E;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -76,22 +75,58 @@
     --color-text-secondary: #9ca3af;
     --color-text-tertiary: #6b7280;
 
-    /* Tailwind/Radix UI component variables for dark mode */
-    --background: #0f0f0f;
-    --foreground: #f3f4f6;
-    --muted: #232323;
-    --muted-foreground: #9ca3af;
-    --primary: #2dd4bf;
-    --primary-foreground: #0f0f0f;
-    --input: #2d2d2d;
-    --ring: #2dd4bf;
-    --destructive: #f87171;
   }
 }
 
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  /* Theme colors for Tailwind utilities */
+  --color-background: #F7F5F3;
+  --color-foreground: #000000;
+  --color-muted: #F3F4F6;
+  --color-muted-foreground: rgba(0, 0, 0, 0.6);
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #000000;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #000000;
+  --color-border: rgba(0, 0, 0, 0.1);
+  --color-input: rgba(0, 0, 0, 0.1);
+  --color-primary: #FF7644;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #FF7644;
+  --color-secondary-foreground: #FFFFFF;
+  --color-accent: #F3F4F6;
+  --color-accent-foreground: #000000;
+  --color-destructive: #FF564E;
+  --color-destructive-foreground: #FFFFFF;
+  --color-ring: #FF7644;
+  --radius: 0.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  @theme inline {
+    --color-background: #0f0f0f;
+    --color-foreground: #f3f4f6;
+    --color-muted: #232323;
+    --color-muted-foreground: #9ca3af;
+    --color-popover: #1a1a1a;
+    --color-popover-foreground: #f3f4f6;
+    --color-card: #1a1a1a;
+    --color-card-foreground: #f3f4f6;
+    --color-border: #2d2d2d;
+    --color-input: #2d2d2d;
+    --color-primary: #2dd4bf;
+    --color-primary-foreground: #0f0f0f;
+    --color-secondary: #2dd4bf;
+    --color-secondary-foreground: #0f0f0f;
+    --color-accent: #232323;
+    --color-accent-foreground: #f3f4f6;
+    --color-destructive: #f87171;
+    --color-destructive-foreground: #f3f4f6;
+    --color-ring: #2dd4bf;
+  }
 }
 
 * {
